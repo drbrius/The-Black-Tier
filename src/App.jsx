@@ -21,7 +21,7 @@ const T = {
     mark_offmarket: "Off-Market", mark_confidential: "Vertraulich", mark_personal: "Persönlich",
     nav_how: "So funktioniert es", nav_request: "Suchprofil", nav_disc: "Diskretion",
     hero1: "Wir suchen,", hero2: "was verborgen bleibt.",
-    heroSub: "Ein privates Akquisitionshaus für Käufer, die Liegenschaften, Grundstücke und ganze Projekte ausserhalb des Marktes erwerben möchten. Kein Inserat, keine Anmeldung — ein vertrauliches Gesuch, persönlich bearbeitet.",
+    heroSub: "Ein privates Akquisitionshaus für anspruchsvolle Käufer, die aussergewöhnliche Werte ausserhalb des Marktes erwerben möchten — Liegenschaften und Projekte ebenso wie Yachten, Automobile, seltene Uhren, Edelmetalle, Energie- und Krypto-Werte sowie vertrauliche Sondermandate. Kein Inserat, keine Anmeldung — ein vertrauliches Gesuch, persönlich bearbeitet.",
     heroCta: "Suchprofil eröffnen",
     heroNote: "Sämtliche Korrespondenz erfolgt ausschliesslich und diskret per E-Mail.",
     mandateTitle: "So funktioniert es",
@@ -38,13 +38,14 @@ const T = {
     fResidence: "Wohnsitz / Land", fHorizon: "Erwerbshorizont",
     hz_now: "Sofort", hz_6m: "Innert 6 Monaten", hz_12m: "Innert 12 Monaten", hz_open: "Offen / opportunistisch",
     fFinance: "Finanzierung", fin_cash: "Eigenmittel", fin_mortgage: "Hypothek", fin_mixed: "Gemischt", fin_tbd: "Noch offen",
-    fTypes: "Art des Objekts (Mehrfachauswahl)",
-    typeApartment: "Wohnung / Attika", typeHouse: "Haus / Villa", typeEstate: "Anwesen / Gut",
-    typeLand: "Grundstück / Bauland", typeProject: "Ganzes Projekt", typeCommercial: "Gewerbe / Rendite", typeVineyard: "Weingut / Landwirtschaft",
+    fTypes: "Kategorie (Mehrfachauswahl)",
+    catRealLux: "Luxusimmobilien", catRealLarge: "Grosse Immobilien / Projekte", catYacht: "Yachten",
+    catCar: "Automobile / Sammlerwagen", catWatch: "Uhren", catGold: "Gold & Edelmetalle",
+    catOil: "Öl & Energie", catCrypto: "Krypto-Assets", catSpecial: "Sonderanfrage",
     fRegions: "Bevorzugte Regionen (Mehrfachauswahl)",
-    rg_geneva: "Genf / Genfersee", rg_vaud: "Waadt / Riviera", rg_zurich: "Zürich / Zürichsee",
-    rg_zug: "Zug / Innerschweiz", rg_lucerne: "Luzern / Vierwaldstättersee", rg_ticino: "Tessin",
-    rg_grisons: "Graubünden / Engadin", rg_valais: "Wallis / Alpen", rg_intl: "International",
+    rg_swiss: "Schweiz", rg_monaco: "Monaco", rg_riviera: "Côte d'Azur", rg_london: "London",
+    rg_dubai: "Dubai", rg_newyork: "New York", rg_miami: "Miami", rg_singapore: "Singapur",
+    rg_hongkong: "Hongkong", rg_caribbean: "Karibik", rg_intl: "International / weltweit",
     fBudget: "Budgetspanne (CHF)", fBudgetFrom: "von", fBudgetTo: "bis",
     fFeatures: "Wichtige Merkmale (Mehrfachauswahl)",
     ft_lake: "Seesicht / Seezugang", ft_mountain: "Bergsicht", ft_privacy: "Maximale Privatsphäre",
@@ -83,7 +84,7 @@ const T = {
     mark_offmarket: "Off-market", mark_confidential: "Confidential", mark_personal: "In person",
     nav_how: "How it works", nav_request: "Search profile", nav_disc: "Discretion",
     hero1: "We source", hero2: "what stays hidden.",
-    heroSub: "A private acquisition house for buyers acquiring properties, land and entire projects off the market. No listing, no account — one confidential brief, handled in person.",
+    heroSub: "A private acquisition house for discerning buyers acquiring exceptional assets off the market — properties and projects as much as yachts, automobiles, rare watches, precious metals, energy and crypto holdings, and confidential special mandates. No listing, no account — one confidential brief, handled in person.",
     heroCta: "Open a search profile",
     heroNote: "All correspondence is handled solely and discreetly by email.",
     mandateTitle: "How it works",
@@ -100,13 +101,14 @@ const T = {
     fResidence: "Residence / country", fHorizon: "Acquisition horizon",
     hz_now: "Immediately", hz_6m: "Within 6 months", hz_12m: "Within 12 months", hz_open: "Open / opportunistic",
     fFinance: "Financing", fin_cash: "Own funds", fin_mortgage: "Mortgage", fin_mixed: "Mixed", fin_tbd: "To be defined",
-    fTypes: "Property type (multiple)",
-    typeApartment: "Apartment / penthouse", typeHouse: "House / villa", typeEstate: "Estate / manor",
-    typeLand: "Land / building plot", typeProject: "Entire project", typeCommercial: "Commercial / yield", typeVineyard: "Vineyard / agricultural",
+    fTypes: "Category (multiple)",
+    catRealLux: "Luxury real estate", catRealLarge: "Large real estate / projects", catYacht: "Yachts",
+    catCar: "Automobiles / collector cars", catWatch: "Watches", catGold: "Gold & precious metals",
+    catOil: "Oil & energy", catCrypto: "Crypto assets", catSpecial: "Special request",
     fRegions: "Preferred regions (multiple)",
-    rg_geneva: "Geneva / Lake Geneva", rg_vaud: "Vaud / Riviera", rg_zurich: "Zurich / Lake Zurich",
-    rg_zug: "Zug / Central CH", rg_lucerne: "Lucerne / Lake Lucerne", rg_ticino: "Ticino",
-    rg_grisons: "Grisons / Engadin", rg_valais: "Valais / Alps", rg_intl: "International",
+    rg_swiss: "Switzerland", rg_monaco: "Monaco", rg_riviera: "French Riviera", rg_london: "London",
+    rg_dubai: "Dubai", rg_newyork: "New York", rg_miami: "Miami", rg_singapore: "Singapore",
+    rg_hongkong: "Hong Kong", rg_caribbean: "Caribbean", rg_intl: "International / worldwide",
     fBudget: "Budget range (CHF)", fBudgetFrom: "from", fBudgetTo: "to",
     fFeatures: "Key features (multiple)",
     ft_lake: "Lake view / access", ft_mountain: "Mountain view", ft_privacy: "Maximum privacy",
@@ -145,7 +147,7 @@ const T = {
     mark_offmarket: "Hors marché", mark_confidential: "Confidentiel", mark_personal: "En personne",
     nav_how: "Comment ça marche", nav_request: "Profil de recherche", nav_disc: "Discrétion",
     hero1: "Nous trouvons", hero2: "ce qui reste caché.",
-    heroSub: "Une maison d'acquisition privée pour les acquéreurs de biens, terrains et projets entiers hors marché. Aucune annonce, aucun compte — une demande confidentielle, traitée en personne.",
+    heroSub: "Une maison d'acquisition privée pour des acquéreurs exigeants, à la recherche de biens d'exception hors marché — biens immobiliers et projets, mais aussi yachts, automobiles, montres rares, métaux précieux, actifs énergétiques et crypto, ainsi que mandats spéciaux confidentiels. Aucune annonce, aucun compte — une demande confidentielle, traitée en personne.",
     heroCta: "Ouvrir un profil de recherche",
     heroNote: "Toute la correspondance se fait uniquement et discrètement par e-mail.",
     mandateTitle: "Comment ça marche",
@@ -162,13 +164,14 @@ const T = {
     fResidence: "Résidence / pays", fHorizon: "Horizon d'acquisition",
     hz_now: "Immédiatement", hz_6m: "Sous 6 mois", hz_12m: "Sous 12 mois", hz_open: "Ouvert / opportuniste",
     fFinance: "Financement", fin_cash: "Fonds propres", fin_mortgage: "Hypothèque", fin_mixed: "Mixte", fin_tbd: "À définir",
-    fTypes: "Type de bien (plusieurs)",
-    typeApartment: "Appartement / attique", typeHouse: "Maison / villa", typeEstate: "Domaine / manoir",
-    typeLand: "Terrain / parcelle", typeProject: "Projet entier", typeCommercial: "Commercial / rendement", typeVineyard: "Vignoble / agricole",
+    fTypes: "Catégorie (plusieurs)",
+    catRealLux: "Immobilier de luxe", catRealLarge: "Grands biens / projets", catYacht: "Yachts",
+    catCar: "Automobiles / collection", catWatch: "Montres", catGold: "Or & métaux précieux",
+    catOil: "Pétrole & énergie", catCrypto: "Actifs crypto", catSpecial: "Demande spéciale",
     fRegions: "Régions préférées (plusieurs)",
-    rg_geneva: "Genève / Léman", rg_vaud: "Vaud / Riviera", rg_zurich: "Zurich / lac de Zurich",
-    rg_zug: "Zoug / Suisse centrale", rg_lucerne: "Lucerne / lac des Quatre-Cantons", rg_ticino: "Tessin",
-    rg_grisons: "Grisons / Engadine", rg_valais: "Valais / Alpes", rg_intl: "International",
+    rg_swiss: "Suisse", rg_monaco: "Monaco", rg_riviera: "Côte d'Azur", rg_london: "Londres",
+    rg_dubai: "Dubaï", rg_newyork: "New York", rg_miami: "Miami", rg_singapore: "Singapour",
+    rg_hongkong: "Hong Kong", rg_caribbean: "Caraïbes", rg_intl: "International / mondial",
     fBudget: "Fourchette de budget (CHF)", fBudgetFrom: "de", fBudgetTo: "à",
     fFeatures: "Caractéristiques clés (plusieurs)",
     ft_lake: "Vue / accès lac", ft_mountain: "Vue montagne", ft_privacy: "Intimité maximale",
@@ -203,12 +206,13 @@ const T = {
   },
 };
 
-const TYPE_KEYS = ["apartment", "house", "estate", "land", "project", "commercial", "vineyard"];
+const TYPE_KEYS = ["realLux", "realLarge", "yacht", "car", "watch", "gold", "oil", "crypto", "special"];
 const typeLabel = (t, k) => ({
-  apartment: t.typeApartment, house: t.typeHouse, estate: t.typeEstate, land: t.typeLand,
-  project: t.typeProject, commercial: t.typeCommercial, vineyard: t.typeVineyard,
+  realLux: t.catRealLux, realLarge: t.catRealLarge, yacht: t.catYacht, car: t.catCar, watch: t.catWatch,
+  gold: t.catGold, oil: t.catOil, crypto: t.catCrypto, special: t.catSpecial,
 }[k] || k);
-const REGION_KEYS = ["geneva", "vaud", "zurich", "zug", "lucerne", "ticino", "grisons", "valais", "intl"];
+const RE_CATS = ["realLux", "realLarge"];
+const REGION_KEYS = ["swiss", "monaco", "riviera", "london", "dubai", "newyork", "miami", "singapore", "hongkong", "caribbean", "intl"];
 const regionLabel = (t, k) => t["rg_" + k] || k;
 const FEATURE_KEYS = ["lake", "mountain", "privacy", "newbuild", "historic", "land", "pool", "staff", "dock", "security"];
 const featureLabel = (t, k) => t["ft_" + k] || k;
@@ -218,22 +222,19 @@ const fmtCHF = (n) => (n ? "CHF " + Number(n).toLocaleString("de-CH") : "—");
 // ---------------- matching agent ----------------
 function scoreMatch(brief, obj) {
   let score = 0, max = 0;
+  max += 40;
+  if (Array.isArray(brief.types) && brief.types.includes(obj.type)) score += 40;
   max += 35;
-  if (Array.isArray(brief.types) && brief.types.includes(obj.type)) score += 35;
-  max += 30;
   const bmin = Number(brief.budgetFrom) || 0;
   const bmax = Number(brief.budgetTo) || Infinity;
-  if (obj.price >= bmin && obj.price <= bmax) score += 30;
-  else if (obj.price <= bmax * 1.1 && obj.price >= bmin * 0.9) score += 15;
-  max += 20;
+  if (obj.price >= bmin && obj.price <= bmax) score += 35;
+  else if (obj.price <= bmax * 1.1 && obj.price >= bmin * 0.9) score += 18;
+  max += 25;
   const oreg = (obj.region || "").toLowerCase();
   if (Array.isArray(brief.regions) && brief.regions.some((rk) => {
     const words = regionLabel(brief._t || T.de, rk).toLowerCase().split(/[^a-zàâäéèêëîïôöùûüç]+/).filter((w) => w.length > 2);
     return words.some((w) => oreg.includes(w));
-  })) score += 20;
-  max += 15;
-  const need = Number(brief.roomsMin) || 0;
-  if (!need || obj.rooms >= need) score += 15;
+  })) score += 25;
   return Math.round((score / max) * 100);
 }
 
@@ -818,17 +819,21 @@ function Request({ t, lang, onSubmit }) {
                   <input type="number" value={f.budgetTo} onChange={set("budgetTo")} placeholder="8'000'000" />
                 </div>
               </div>
-              <div className="field">
-                <label>{t.fFeatures}</label>
-                <div className="chips">
-                  {FEATURE_KEYS.map((k) => <button key={k} type="button" className={`chip ${f.features.includes(k) ? "on" : ""}`} onClick={() => toggle("features", k)}>{featureLabel(t, k)}</button>)}
-                </div>
-              </div>
-              <div className="grid3">
-                <div className="field"><label>{t.fRoomsMin}</label><input type="number" value={f.roomsMin} onChange={set("roomsMin")} /></div>
-                <div className="field"><label>{t.fAreaMin}</label><input type="number" value={f.areaMin} onChange={set("areaMin")} /></div>
-                <div className="field"><label>{t.fPlotMin}</label><input type="number" value={f.plotMin} onChange={set("plotMin")} /></div>
-              </div>
+              {f.types.some((k) => RE_CATS.includes(k)) && (
+                <>
+                  <div className="field">
+                    <label>{t.fFeatures}</label>
+                    <div className="chips">
+                      {FEATURE_KEYS.map((k) => <button key={k} type="button" className={`chip ${f.features.includes(k) ? "on" : ""}`} onClick={() => toggle("features", k)}>{featureLabel(t, k)}</button>)}
+                    </div>
+                  </div>
+                  <div className="grid3">
+                    <div className="field"><label>{t.fRoomsMin}</label><input type="number" value={f.roomsMin} onChange={set("roomsMin")} /></div>
+                    <div className="field"><label>{t.fAreaMin}</label><input type="number" value={f.areaMin} onChange={set("areaMin")} /></div>
+                    <div className="field"><label>{t.fPlotMin}</label><input type="number" value={f.plotMin} onChange={set("plotMin")} /></div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
@@ -926,7 +931,7 @@ function Office({ t, lang, go, objects, setObjects, briefs, setBriefs, outbox, s
 }
 
 function Objects({ t, objects, setObjects }) {
-  const empty = { title: "", type: "house", region: "", address: "", price: "", rooms: "", area: "", plot: "", broker: "", brokerEmail: "", desc: "" };
+  const empty = { title: "", type: "realLux", region: "", address: "", price: "", rooms: "", area: "", plot: "", broker: "", brokerEmail: "", desc: "" };
   const [f, setF] = useState(empty);
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
   const add = () => {
@@ -944,7 +949,7 @@ function Objects({ t, objects, setObjects }) {
             <select value={f.type} onChange={set("type")}>{TYPE_KEYS.map((k) => <option key={k} value={k}>{typeLabel(t, k)}</option>)}</select></div>
         </div>
         <div className="grid2">
-          <div className="field"><label>{t.oRegion}</label><input value={f.region} onChange={set("region")} placeholder="z.B. Luzern / Vierwaldstättersee" /></div>
+          <div className="field"><label>{t.oRegion}</label><input value={f.region} onChange={set("region")} placeholder="z.B. Monaco · London · Dubai" /></div>
           <div className="field"><label>{t.oAddress}</label><input value={f.address} onChange={set("address")} /></div>
         </div>
         <div className="grid3">
