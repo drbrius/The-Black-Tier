@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useId } from "react";
+import { supabase, hasSupabase } from "./lib/supabase";
 
 /*
   THE BLACK TIER — Private Acquisition Office
@@ -593,13 +594,27 @@ export default function App() {
 
       {page === "home" && <Home t={t} go={go} />}
       {page === "disc" && <Discretion t={t} go={go} />}
-      {page === "request" && <Request t={t} lang={lang} onSubmit={(b) => setBriefs((p) => [{ ...b, id: "b" + Date.now(), released: [], handed: [] }, ...p])} />}
-      {page === "office" && (
-        <Office t={t} lang={lang} go={go}
-          objects={objects} setObjects={setObjects}
-          briefs={briefs} setBriefs={setBriefs}
-          outbox={outbox} setOutbox={setOutbox} />
-      )}
+      {page === "request" && <Request t={t} lang={lang} onSubmit={(b) => {
+        setBriefs((p) => [{ ...b, id: "b" + Date.now(), released: [], handed: [] }, ...p]);
+        if (hasSupabase) {
+          supabase.from("inquiries").insert({
+            name: b.name, email: b.email, phone: b.phone || null, buyer_type: b.buyerType || null,
+            residence: b.residence || null, horizon: b.horizon || null, finance: b.finance || null,
+            categories: b.types, regions: b.regions,
+            budget_from: Number(b.budgetFrom) || null, budget_to: Number(b.budgetTo) || null,
+            features: b.features, rooms_min: Number(b.roomsMin) || null, area_min: Number(b.areaMin) || null, plot_min: Number(b.plotMin) || null,
+            detail: b.detail, discretion: b.discretion || null, contact_pref: b.contactPref || null, lang,
+          }).then(({ error }) => { if (error) console.error("inquiry insert failed:", error.message); });
+        }
+      }} />}
+      {page === "office" && (hasSupabase
+        ? <OfficeBackend t={t} go={go} />
+        : (
+          <Office t={t} lang={lang} go={go}
+            objects={objects} setObjects={setObjects}
+            briefs={briefs} setBriefs={setBriefs}
+            outbox={outbox} setOutbox={setOutbox} />
+        ))}
 
       {page !== "office" && (
         <footer className="foot">
@@ -1087,4 +1102,329 @@ function Outbox({ t, outbox }) {
       <div className="mb">{m.body}</div>
     </div>
   ));
+}
+
+// ================= Real CRM (Supabase-backed) =================
+// Internal staff tool — German UI. Rendered only when env vars are set.
+function OfficeBackend({ t, go }) {
+  const [session, setSession] = useState(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => { if (active) { setSession(data.session); setReady(true); } });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => { active = false; sub.subscription.unsubscribe(); };
+  }, []);
+
+  if (!ready) return <div className="wrap"><div className="empty">…</div></div>;
+  if (!session) return <StaffLogin go={go} />;
+  return <Crm t={t} go={go} session={session} />;
+}
+
+function StaffLogin({ go }) {
+  const [email, setEmail] = useState("");
+  const [pw, setPw] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    if (busy) return;
+    setBusy(true); setErr("");
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: pw });
+    setBusy(false);
+    if (error) setErr("Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen.");
+  };
+
+  return (
+    <div className="wrap">
+      <div className="gate">
+        <Crest className="gate-crest" />
+        <h2>Office</h2>
+        <p>Zugang ausschliesslich für Office-Mitarbeiter.</p>
+        <div className="field">
+          <label>E-Mail</label>
+          <input type="email" value={email} autoComplete="username"
+            onChange={(e) => { setEmail(e.target.value); setErr(""); }}
+            onKeyDown={(e) => e.key === "Enter" && document.getElementById("crm-pw")?.focus()} />
+        </div>
+        <div className="field">
+          <label>Passwort</label>
+          <input id="crm-pw" type="password" value={pw} autoComplete="current-password"
+            onChange={(e) => { setPw(e.target.value); setErr(""); }}
+            onKeyDown={(e) => e.key === "Enter" && submit()} />
+          {err && <div className="err-msg">{err}</div>}
+        </div>
+        <button className="cta" style={{ width: "100%", justifyContent: "center" }} disabled={busy}
+          onClick={submit}><span>{busy ? "Anmelden …" : "Anmelden"}</span></button>
+        <button className="linkbtn" style={{ marginTop: 16 }} onClick={() => { window.location.hash = ""; go("home"); }}>← THE BLACK TIER</button>
+      </div>
+    </div>
+  );
+}
+
+function Crm({ t, go, session }) {
+  const [tab, setTab] = useState("inquiries");
+  const [inquiries, setInquiries] = useState([]);
+  const [holdings, setHoldings] = useState([]);
+  const [contacts, setContacts] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    const [iq, hd, ct, ms] = await Promise.all([
+      supabase.from("inquiries").select("*").order("created_at", { ascending: false }),
+      supabase.from("holdings").select("*").order("created_at", { ascending: false }),
+      supabase.from("contacts").select("*").order("created_at", { ascending: false }),
+      supabase.from("messages").select("*").order("created_at", { ascending: false }),
+    ]);
+    setInquiries(iq.data || []); setHoldings(hd.data || []);
+    setContacts(ct.data || []); setMessages(ms.data || []);
+    setLoading(false);
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const sendEmail = async ({ to, subject, body, inquiryId, kind }) => {
+    const { data: { session: s } } = await supabase.auth.getSession();
+    const res = await fetch("/api/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${s?.access_token || ""}` },
+      body: JSON.stringify({ to, subject, body, inquiryId, kind }),
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || `Fehler ${res.status}`);
+    }
+    await load();
+  };
+
+  const addHolding = async (h) => { await supabase.from("holdings").insert(h); await load(); };
+  const addContact = async (c) => { await supabase.from("contacts").insert(c); await load(); };
+
+  return (
+    <section className="sec" style={{ borderTop: "none", paddingTop: 48 }}>
+      <div className="wrap">
+        <div className="officebar">
+          <div className="ob-id">
+            <Crest />
+            <div className="ob-t">THE BLACK TIER · Office</div>
+          </div>
+          <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
+            <span style={{ fontSize: 11, color: "var(--mute)" }}>{session.user?.email}</span>
+            <button className="linkbtn" onClick={() => { window.location.hash = ""; go("home"); }}>Zur Website →</button>
+            <button className="linkbtn" onClick={() => supabase.auth.signOut()}>Abmelden</button>
+          </div>
+        </div>
+        <div className="tabs">
+          <button className={`tab ${tab === "inquiries" ? "on" : ""}`} onClick={() => setTab("inquiries")}>Anfragen<span className="badge">{inquiries.length}</span></button>
+          <button className={`tab ${tab === "holdings" ? "on" : ""}`} onClick={() => setTab("holdings")}>Bestand<span className="badge">{holdings.length}</span></button>
+          <button className={`tab ${tab === "contacts" ? "on" : ""}`} onClick={() => setTab("contacts")}>Kontakte<span className="badge">{contacts.length}</span></button>
+          <button className={`tab ${tab === "outbox" ? "on" : ""}`} onClick={() => setTab("outbox")}>Postausgang<span className="badge">{messages.length}</span></button>
+        </div>
+
+        {loading && <div className="empty">Lädt …</div>}
+
+        {!loading && tab === "inquiries" && (
+          inquiries.length === 0
+            ? <div className="empty">Noch keine Anfragen eingegangen.</div>
+            : inquiries.map((inq) => <InquiryCard key={inq.id} inq={inq} holdings={holdings} t={t} onSend={sendEmail} />)
+        )}
+
+        {!loading && tab === "holdings" && (
+          <>
+            <HoldingForm t={t} onAdd={addHolding} />
+            {holdings.length === 0 && <div className="empty">Noch keine Objekte erfasst.</div>}
+            {holdings.map((o) => (
+              <div className="card" key={o.id}>
+                <div className="card-h"><div className="t">{o.title}</div><span className="pill">{typeLabel(t, o.category)}</span></div>
+                <div className="kv">
+                  <div><div className="k">Region</div><div className="v">{o.region || "—"}</div></div>
+                  <div><div className="k">Adresse</div><div className="v">{o.address || "—"}</div></div>
+                  <div><div className="k">Preis</div><div className="v">{fmtCHF(o.price)}</div></div>
+                  <div><div className="k">Makler</div><div className="v">{o.broker || "—"}</div></div>
+                </div>
+                {o.description && <p className="desc">{o.description}</p>}
+              </div>
+            ))}
+          </>
+        )}
+
+        {!loading && tab === "contacts" && (
+          <>
+            <ContactForm onAdd={addContact} />
+            {contacts.length === 0 && <div className="empty">Noch keine Kontakte.</div>}
+            {contacts.map((c) => (
+              <div className="card" key={c.id}>
+                <div className="card-h"><div className="t">{c.name}</div>{c.kind && <span className="pill mute">{c.kind}</span>}</div>
+                <div className="kv">
+                  <div><div className="k">E-Mail</div><div className="v">{c.email || "—"}</div></div>
+                  <div><div className="k">Telefon</div><div className="v">{c.phone || "—"}</div></div>
+                </div>
+                {c.notes && <p className="desc">{c.notes}</p>}
+              </div>
+            ))}
+          </>
+        )}
+
+        {!loading && tab === "outbox" && (
+          messages.length === 0
+            ? <div className="empty">Noch keine Nachrichten versendet.</div>
+            : messages.map((m) => (
+              <div className="mail" key={m.id}>
+                <div className="mh"><b>An:</b> {m.to_email}</div>
+                <div className="mh"><b>Betreff:</b> {m.subject}</div>
+                <div className="mt">✦ {new Date(m.created_at).toLocaleString("de-CH")} · {m.created_by || ""}</div>
+                <div className="mb">{m.body}</div>
+              </div>
+            ))
+        )}
+      </div>
+    </section>
+  );
+}
+
+function InquiryCard({ inq, holdings, t, onSend }) {
+  const [open, setOpen] = useState(false);
+  const [subject, setSubject] = useState("Ihre Anfrage — The Black Tier");
+  const [body, setBody] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [ok, setOk] = useState("");
+  const [err, setErr] = useState("");
+
+  const briefLike = { types: inq.categories || [], regions: inq.regions || [], budgetFrom: inq.budget_from, budgetTo: inq.budget_to, _t: t };
+  const matches = (holdings || [])
+    .map((h) => ({ h, score: scoreMatch(briefLike, { type: h.category, price: Number(h.price) || 0, region: h.region, rooms: Number(h.rooms) || 0 }) }))
+    .filter((m) => m.score >= 50).sort((a, z) => z.score - a.score);
+
+  const fire = async (payload) => {
+    if (busy) return;
+    setBusy(true); setErr(""); setOk("");
+    try { await onSend(payload); setOk("Gesendet ✓"); setOpen(false); setBody(""); }
+    catch (e) { setErr("Versand fehlgeschlagen: " + e.message); }
+    finally { setBusy(false); }
+  };
+
+  const sendDossier = (h, score) => fire({
+    to: inq.email, kind: "dossier",
+    subject: `Dossier (zensiert) · ${typeLabel(t, h.category)}`,
+    body: `Vertraulich\n\n${typeLabel(t, h.category)} · ${h.region || ""}\nPreis: ${fmtCHF(h.price)}\nAdresse & Identität auf Anfrage\n\n${score}% Übereinstimmung`,
+    inquiryId: inq.id,
+  });
+
+  return (
+    <div className="card">
+      <div className="card-h">
+        <div className="t">{inq.name}</div>
+        <span className="pill mute">{new Date(inq.created_at).toLocaleDateString("de-CH")}</span>
+      </div>
+      <div className="kv">
+        <div><div className="k">E-Mail</div><div className="v">{inq.email}</div></div>
+        <div><div className="k">Telefon</div><div className="v">{inq.phone || "—"}</div></div>
+        <div><div className="k">Wohnsitz</div><div className="v">{inq.residence || "—"}</div></div>
+        <div><div className="k">Budget</div><div className="v">{fmtCHF(inq.budget_from)} – {fmtCHF(inq.budget_to)}</div></div>
+      </div>
+      {inq.categories?.length > 0 && <div className="tags">{inq.categories.map((k) => <span className="tg" key={k}>{typeLabel(t, k)}</span>)}</div>}
+      {inq.regions?.length > 0 && <div className="tags">{inq.regions.map((k) => <span className="tg" key={k}>{regionLabel(t, k)}</span>)}</div>}
+      {inq.detail && <p className="desc">{inq.detail}</p>}
+
+      {matches.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          {matches.map(({ h, score }) => (
+            <div key={h.id}>
+              <div className="match-line">
+                <span className="mt-name">{h.title}</span>
+                <div className="bar"><i style={{ width: score + "%" }} /></div>
+                <span className="scn">{score}%</span>
+              </div>
+              <div className="btnrow"><button className="btn sec" disabled={busy} onClick={() => sendDossier(h, score)}>Zensiertes Dossier senden</button></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="btnrow">
+        <button className="btn" onClick={() => setOpen((o) => !o)}><span>Per E-Mail antworten</span></button>
+      </div>
+
+      {open && (
+        <div style={{ marginTop: 14 }}>
+          <div className="field"><label>Betreff</label><input value={subject} onChange={(e) => setSubject(e.target.value)} /></div>
+          <div className="field"><label>Nachricht an {inq.email}</label><textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Ihre Nachricht …" /></div>
+          <div className="btnrow">
+            <button className="btn" disabled={busy || !body.trim()} onClick={() => fire({ to: inq.email, subject, body, inquiryId: inq.id, kind: "reply" })}>
+              <span>{busy ? "Senden …" : "Senden"}</span>
+            </button>
+          </div>
+        </div>
+      )}
+      {ok && <div className="err-msg" style={{ color: "var(--gold2)" }}>{ok}</div>}
+      {err && <div className="err-msg">{err}</div>}
+    </div>
+  );
+}
+
+function HoldingForm({ t, onAdd }) {
+  const empty = { title: "", category: "realLux", region: "", address: "", price: "", rooms: "", area: "", plot: "", broker: "", broker_email: "", description: "" };
+  const [f, setF] = useState(empty);
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const add = async () => {
+    if (!f.title.trim() || busy) return;
+    setBusy(true);
+    await onAdd({
+      title: f.title, category: f.category, region: f.region || null, address: f.address || null,
+      price: Number(f.price) || null, rooms: Number(f.rooms) || null, area: Number(f.area) || null, plot: Number(f.plot) || null,
+      broker: f.broker || null, broker_email: f.broker_email || null, description: f.description || null,
+    });
+    setF(empty); setBusy(false);
+  };
+  return (
+    <div className="card">
+      <div className="card-h"><div className="t">Off-Market-Objekt erfassen</div></div>
+      <div className="grid2">
+        <div className="field"><label>Interne Bezeichnung</label><input value={f.title} onChange={set("title")} /></div>
+        <div className="field"><label>Kategorie</label>
+          <select value={f.category} onChange={set("category")}>{TYPE_KEYS.map((k) => <option key={k} value={k}>{typeLabel(t, k)}</option>)}</select></div>
+      </div>
+      <div className="grid2">
+        <div className="field"><label>Region</label><input value={f.region} onChange={set("region")} placeholder="z.B. Monaco · London · Dubai" /></div>
+        <div className="field"><label>Adresse (intern, vertraulich)</label><input value={f.address} onChange={set("address")} /></div>
+      </div>
+      <div className="grid3">
+        <div className="field"><label>Preis (CHF)</label><input type="number" value={f.price} onChange={set("price")} /></div>
+        <div className="field"><label>Makler (Name)</label><input value={f.broker} onChange={set("broker")} /></div>
+        <div className="field"><label>Makler E-Mail</label><input value={f.broker_email} onChange={set("broker_email")} /></div>
+      </div>
+      <div className="field"><label>Interne Beschreibung</label><textarea value={f.description} onChange={set("description")} /></div>
+      <button className="btn" disabled={busy} onClick={add}><span>{busy ? "Speichern …" : "In Bestand speichern"}</span></button>
+    </div>
+  );
+}
+
+function ContactForm({ onAdd }) {
+  const empty = { name: "", email: "", phone: "", kind: "", notes: "" };
+  const [f, setF] = useState(empty);
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const add = async () => {
+    if (!f.name.trim() || busy) return;
+    setBusy(true);
+    await onAdd({ name: f.name, email: f.email || null, phone: f.phone || null, kind: f.kind || null, notes: f.notes || null });
+    setF(empty); setBusy(false);
+  };
+  return (
+    <div className="card">
+      <div className="card-h"><div className="t">Kontakt hinzufügen</div></div>
+      <div className="grid2">
+        <div className="field"><label>Name</label><input value={f.name} onChange={set("name")} /></div>
+        <div className="field"><label>Art</label><input value={f.kind} onChange={set("kind")} placeholder="Käufer · Verkäufer · Makler …" /></div>
+      </div>
+      <div className="grid2">
+        <div className="field"><label>E-Mail</label><input value={f.email} onChange={set("email")} /></div>
+        <div className="field"><label>Telefon</label><input value={f.phone} onChange={set("phone")} /></div>
+      </div>
+      <div className="field"><label>Notiz</label><textarea value={f.notes} onChange={set("notes")} /></div>
+      <button className="btn" disabled={busy} onClick={add}><span>{busy ? "Speichern …" : "Kontakt speichern"}</span></button>
+    </div>
+  );
 }
