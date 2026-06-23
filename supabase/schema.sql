@@ -52,8 +52,11 @@ create table if not exists contacts (
   email text,
   phone text,
   kind text,
+  categories text[] default '{}',
   notes text
 );
+-- Migration for an existing database (safe to re-run):
+alter table contacts add column if not exists categories text[] default '{}';
 
 -- Sent email log (written by the /api/send serverless function)
 create table if not exists messages (

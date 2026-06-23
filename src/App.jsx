@@ -44,6 +44,7 @@ const T = {
     catCar: "Automobile / Sammlerwagen", catWatch: "Uhren", catGold: "Gold & Edelmetalle",
     catOil: "Öl & Energie", catCrypto: "Krypto-Assets", catSpecial: "Sonderanfrage",
     fRegions: "Bevorzugte Regionen (Mehrfachauswahl)",
+    fRegionAdd: "Land / Region hinzufügen …",
     rg_swiss: "Schweiz", rg_monaco: "Monaco", rg_riviera: "Côte d'Azur", rg_london: "London",
     rg_dubai: "Dubai", rg_newyork: "New York", rg_miami: "Miami", rg_singapore: "Singapur",
     rg_hongkong: "Hongkong", rg_caribbean: "Karibik", rg_intl: "International / weltweit",
@@ -107,6 +108,7 @@ const T = {
     catCar: "Automobiles / collector cars", catWatch: "Watches", catGold: "Gold & precious metals",
     catOil: "Oil & energy", catCrypto: "Crypto assets", catSpecial: "Special request",
     fRegions: "Preferred regions (multiple)",
+    fRegionAdd: "Add country / region …",
     rg_swiss: "Switzerland", rg_monaco: "Monaco", rg_riviera: "French Riviera", rg_london: "London",
     rg_dubai: "Dubai", rg_newyork: "New York", rg_miami: "Miami", rg_singapore: "Singapore",
     rg_hongkong: "Hong Kong", rg_caribbean: "Caribbean", rg_intl: "International / worldwide",
@@ -170,6 +172,7 @@ const T = {
     catCar: "Automobiles / collection", catWatch: "Montres", catGold: "Or & métaux précieux",
     catOil: "Pétrole & énergie", catCrypto: "Actifs crypto", catSpecial: "Demande spéciale",
     fRegions: "Régions préférées (plusieurs)",
+    fRegionAdd: "Ajouter un pays / une région …",
     rg_swiss: "Suisse", rg_monaco: "Monaco", rg_riviera: "Côte d'Azur", rg_london: "Londres",
     rg_dubai: "Dubaï", rg_newyork: "New York", rg_miami: "Miami", rg_singapore: "Singapour",
     rg_hongkong: "Hong Kong", rg_caribbean: "Caraïbes", rg_intl: "International / mondial",
@@ -220,6 +223,22 @@ const featureLabel = (t, k) => t["ft_" + k] || k;
 
 const fmtCHF = (n) => (n ? "CHF " + Number(n).toLocaleString("de-CH") : "—");
 
+// ---------------- worldwide regions (ISO country codes, localized) ----------------
+const COUNTRY_CODES = ["AD","AE","AF","AG","AL","AM","AO","AR","AT","AU","AW","AZ","BA","BB","BD","BE","BF","BG","BH","BI","BJ","BN","BO","BR","BS","BT","BW","BY","BZ","CA","CD","CF","CG","CH","CI","CL","CM","CN","CO","CR","CU","CV","CY","CZ","DE","DJ","DK","DM","DO","DZ","EC","EE","EG","ER","ES","ET","FI","FJ","FM","FR","GA","GB","GD","GE","GH","GI","GM","GN","GQ","GR","GT","GW","GY","HK","HN","HR","HT","HU","ID","IE","IL","IN","IQ","IR","IS","IT","JM","JO","JP","KE","KG","KH","KI","KM","KN","KP","KR","KW","KY","KZ","LA","LB","LC","LI","LK","LR","LS","LT","LU","LV","LY","MA","MC","MD","ME","MG","MH","MK","ML","MM","MN","MO","MQ","MR","MT","MU","MV","MW","MX","MY","MZ","NA","NC","NE","NG","NI","NL","NO","NP","NR","NZ","OM","PA","PE","PF","PG","PH","PK","PL","PR","PT","PW","PY","QA","RO","RS","RU","RW","SA","SB","SC","SD","SE","SG","SI","SK","SL","SM","SN","SO","SR","SS","ST","SV","SY","SZ","TC","TD","TG","TH","TJ","TL","TM","TN","TO","TR","TT","TV","TW","TZ","UA","UG","US","UY","UZ","VA","VC","VE","VG","VN","VU","WS","YE","ZA","ZM","ZW"];
+function regionName(lang, code) {
+  if (!code) return "";
+  if (code === "WORLD") return (T[lang] && T[lang].rg_intl) || "International";
+  try { return new Intl.DisplayNames([lang], { type: "region" }).of(code) || code; }
+  catch (e) { return code; }
+}
+function regionOptions(lang) {
+  let dn = null;
+  try { dn = new Intl.DisplayNames([lang], { type: "region" }); } catch (e) { dn = null; }
+  return COUNTRY_CODES
+    .map((c) => ({ code: c, name: dn ? (dn.of(c) || c) : c }))
+    .sort((a, b) => a.name.localeCompare(b.name, lang));
+}
+
 // ---------------- matching agent ----------------
 function scoreMatch(brief, obj) {
   let score = 0, max = 0;
@@ -233,7 +252,7 @@ function scoreMatch(brief, obj) {
   max += 25;
   const oreg = (obj.region || "").toLowerCase();
   if (Array.isArray(brief.regions) && brief.regions.some((rk) => {
-    const words = regionLabel(brief._t || T.de, rk).toLowerCase().split(/[^a-zàâäéèêëîïôöùûüç]+/).filter((w) => w.length > 2);
+    const words = regionName(brief._lang || "de", rk).toLowerCase().split(/[^a-zàâäéèêëîïôöùûüç]+/).filter((w) => w.length > 2);
     return words.some((w) => oreg.includes(w));
   })) score += 25;
   return Math.round((score / max) * 100);
@@ -608,7 +627,7 @@ export default function App() {
         }
       }} />}
       {page === "office" && (hasSupabase
-        ? <OfficeBackend t={t} go={go} />
+        ? <OfficeBackend t={t} lang={lang} go={go} />
         : (
           <Office t={t} lang={lang} go={go}
             objects={objects} setObjects={setObjects}
@@ -713,6 +732,8 @@ function Request({ t, lang, onSubmit }) {
   useReveal("request" + step + done);
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
   const toggle = (k, v) => setF((p) => ({ ...p, [k]: p[k].includes(v) ? p[k].filter((x) => x !== v) : [...p[k], v] }));
+  const regOpts = useMemo(() => regionOptions(lang), [lang]);
+  const addRegion = (v) => setF((p) => ({ ...p, regions: p.regions.includes(v) ? p.regions : [...p.regions, v] }));
 
   const validateStep = () => {
     const e = {};
@@ -736,7 +757,7 @@ function Request({ t, lang, onSubmit }) {
   const back = () => { setErrs({}); setStep((s) => s - 1); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const submit = () => {
     if (!validateStep()) return;
-    onSubmit({ ...f, _t: T[lang], at: new Date().toISOString() });
+    onSubmit({ ...f, _t: T[lang], _lang: lang, at: new Date().toISOString() });
     setDone(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -820,9 +841,18 @@ function Request({ t, lang, onSubmit }) {
               </div>
               <div className={`field ${errs.regions ? "err" : ""}`}>
                 <label>{t.fRegions}</label>
-                <div className="chips">
-                  {REGION_KEYS.map((k) => <button key={k} type="button" className={`chip ${f.regions.includes(k) ? "on" : ""}`} onClick={() => toggle("regions", k)}>{regionLabel(t, k)}</button>)}
-                </div>
+                <select value="" onChange={(e) => { if (e.target.value) addRegion(e.target.value); }}>
+                  <option value="">{t.fRegionAdd}</option>
+                  <option value="WORLD">{regionName(lang, "WORLD")}</option>
+                  {regOpts.map((o) => <option key={o.code} value={o.code}>{o.name}</option>)}
+                </select>
+                {f.regions.length > 0 && (
+                  <div className="chips" style={{ marginTop: 12 }}>
+                    {f.regions.map((code) => (
+                      <button key={code} type="button" className="chip on" onClick={() => toggle("regions", code)}>{regionName(lang, code)} ✕</button>
+                    ))}
+                  </div>
+                )}
                 {errs.regions && <div className="err-msg">{t.chooseOne}</div>}
               </div>
               <div className="field">
@@ -937,7 +967,7 @@ function Office({ t, lang, go, objects, setObjects, briefs, setBriefs, outbox, s
         </div>
 
         {tab === "objects" && <Objects t={t} objects={objects} setObjects={setObjects} />}
-        {tab === "briefs" && <Briefs t={t} briefs={briefs} />}
+        {tab === "briefs" && <Briefs t={t} lang={lang} briefs={briefs} />}
         {tab === "agent" && <Agent t={t} objects={objects} briefs={briefs} setBriefs={setBriefs} setOutbox={setOutbox} />}
         {tab === "outbox" && <Outbox t={t} outbox={outbox} />}
       </div>
@@ -1001,7 +1031,7 @@ function Objects({ t, objects, setObjects }) {
   );
 }
 
-function Briefs({ t, briefs }) {
+function Briefs({ t, lang, briefs }) {
   if (briefs.length === 0) return <div className="empty">{t.noBriefs}</div>;
   return briefs.map((b) => (
     <div className="card" key={b.id}>
@@ -1017,7 +1047,7 @@ function Briefs({ t, briefs }) {
         <div><div className="k">{t.fDiscretion}</div><div className="v">{t["dsc_" + b.discretion] || "—"}</div></div>
       </div>
       {b.types?.length > 0 && <div className="tags">{b.types.map((k) => <span className="tg" key={k}>{typeLabel(t, k)}</span>)}</div>}
-      {b.regions?.length > 0 && <div className="tags">{b.regions.map((k) => <span className="tg" key={k}>{regionLabel(t, k)}</span>)}</div>}
+      {b.regions?.length > 0 && <div className="tags">{b.regions.map((k) => <span className="tg" key={k}>{regionName(lang, k)}</span>)}</div>}
       {b.features?.length > 0 && <div className="tags">{b.features.map((k) => <span className="tg" key={k}>{featureLabel(t, k)}</span>)}</div>}
       {b.detail && <p className="desc">{b.detail}</p>}
     </div>
@@ -1106,7 +1136,7 @@ function Outbox({ t, outbox }) {
 
 // ================= Real CRM (Supabase-backed) =================
 // Internal staff tool — German UI. Rendered only when env vars are set.
-function OfficeBackend({ t, go }) {
+function OfficeBackend({ t, lang, go }) {
   const [session, setSession] = useState(null);
   const [ready, setReady] = useState(false);
 
@@ -1119,7 +1149,7 @@ function OfficeBackend({ t, go }) {
 
   if (!ready) return <div className="wrap"><div className="empty">…</div></div>;
   if (!session) return <StaffLogin go={go} />;
-  return <Crm t={t} go={go} session={session} />;
+  return <Crm t={t} lang={lang} go={go} session={session} />;
 }
 
 function StaffLogin({ go }) {
@@ -1163,13 +1193,15 @@ function StaffLogin({ go }) {
   );
 }
 
-function Crm({ t, go, session }) {
+function Crm({ t, lang, go, session }) {
   const [tab, setTab] = useState("inquiries");
   const [inquiries, setInquiries] = useState([]);
   const [holdings, setHoldings] = useState([]);
   const [contacts, setContacts] = useState([]);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [inqFilter, setInqFilter] = useState("all");
+  const [conFilter, setConFilter] = useState("all");
 
   const load = async () => {
     const [iq, hd, ct, ms] = await Promise.all([
@@ -1200,6 +1232,22 @@ function Crm({ t, go, session }) {
 
   const addHolding = async (h) => { await supabase.from("holdings").insert(h); await load(); };
   const addContact = async (c) => { await supabase.from("contacts").insert(c); await load(); };
+  const saveContact = async (inq) => {
+    const dup = contacts.some((c) => c.email && inq.email && c.email.toLowerCase() === inq.email.toLowerCase());
+    if (dup) return "exists";
+    const { error } = await supabase.from("contacts").insert({
+      name: inq.name, email: inq.email, phone: inq.phone || null,
+      kind: t["bt_" + inq.buyer_type] || "Käufer",
+      categories: inq.categories || [], notes: inq.detail || null,
+    });
+    if (error) throw new Error(error.message);
+    await load();
+    return "ok";
+  };
+
+  const contactEmails = new Set(contacts.filter((c) => c.email).map((c) => c.email.toLowerCase()));
+  const shownInq = inqFilter === "all" ? inquiries : inquiries.filter((i) => (i.categories || []).includes(inqFilter));
+  const shownCon = conFilter === "all" ? contacts : contacts.filter((c) => (c.categories || []).includes(conFilter));
 
   return (
     <section className="sec" style={{ borderTop: "none", paddingTop: 48 }}>
@@ -1211,6 +1259,7 @@ function Crm({ t, go, session }) {
           </div>
           <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
             <span style={{ fontSize: 11, color: "var(--mute)" }}>{session.user?.email}</span>
+            <button className="linkbtn" onClick={load}>Aktualisieren ↻</button>
             <button className="linkbtn" onClick={() => { window.location.hash = ""; go("home"); }}>Zur Website →</button>
             <button className="linkbtn" onClick={() => supabase.auth.signOut()}>Abmelden</button>
           </div>
@@ -1227,7 +1276,16 @@ function Crm({ t, go, session }) {
         {!loading && tab === "inquiries" && (
           inquiries.length === 0
             ? <div className="empty">Noch keine Anfragen eingegangen.</div>
-            : inquiries.map((inq) => <InquiryCard key={inq.id} inq={inq} holdings={holdings} t={t} onSend={sendEmail} />)
+            : (
+              <>
+                <Folders items={inquiries} value={inqFilter} onChange={setInqFilter} t={t} />
+                {shownInq.map((inq) => (
+                  <InquiryCard key={inq.id} inq={inq} holdings={holdings} t={t} lang={lang}
+                    onSend={sendEmail} onSaveContact={saveContact}
+                    alreadyContact={!!(inq.email && contactEmails.has(inq.email.toLowerCase()))} />
+                ))}
+              </>
+            )
         )}
 
         {!loading && tab === "holdings" && (
@@ -1251,15 +1309,17 @@ function Crm({ t, go, session }) {
 
         {!loading && tab === "contacts" && (
           <>
-            <ContactForm onAdd={addContact} />
+            <ContactForm t={t} onAdd={addContact} />
             {contacts.length === 0 && <div className="empty">Noch keine Kontakte.</div>}
-            {contacts.map((c) => (
+            {contacts.length > 0 && <Folders items={contacts} value={conFilter} onChange={setConFilter} t={t} />}
+            {shownCon.map((c) => (
               <div className="card" key={c.id}>
                 <div className="card-h"><div className="t">{c.name}</div>{c.kind && <span className="pill mute">{c.kind}</span>}</div>
                 <div className="kv">
                   <div><div className="k">E-Mail</div><div className="v">{c.email || "—"}</div></div>
                   <div><div className="k">Telefon</div><div className="v">{c.phone || "—"}</div></div>
                 </div>
+                {c.categories?.length > 0 && <div className="tags">{c.categories.map((k) => <span className="tg" key={k}>{typeLabel(t, k)}</span>)}</div>}
                 {c.notes && <p className="desc">{c.notes}</p>}
               </div>
             ))}
@@ -1283,15 +1343,16 @@ function Crm({ t, go, session }) {
   );
 }
 
-function InquiryCard({ inq, holdings, t, onSend }) {
+function InquiryCard({ inq, holdings, t, lang, onSend, onSaveContact, alreadyContact }) {
   const [open, setOpen] = useState(false);
   const [subject, setSubject] = useState("Ihre Anfrage — The Black Tier");
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const [ok, setOk] = useState("");
   const [err, setErr] = useState("");
+  const [saved, setSaved] = useState(false);
 
-  const briefLike = { types: inq.categories || [], regions: inq.regions || [], budgetFrom: inq.budget_from, budgetTo: inq.budget_to, _t: t };
+  const briefLike = { types: inq.categories || [], regions: inq.regions || [], budgetFrom: inq.budget_from, budgetTo: inq.budget_to, _lang: inq.lang || lang };
   const matches = (holdings || [])
     .map((h) => ({ h, score: scoreMatch(briefLike, { type: h.category, price: Number(h.price) || 0, region: h.region, rooms: Number(h.rooms) || 0 }) }))
     .filter((m) => m.score >= 50).sort((a, z) => z.score - a.score);
@@ -1324,7 +1385,7 @@ function InquiryCard({ inq, holdings, t, onSend }) {
         <div><div className="k">Budget</div><div className="v">{fmtCHF(inq.budget_from)} – {fmtCHF(inq.budget_to)}</div></div>
       </div>
       {inq.categories?.length > 0 && <div className="tags">{inq.categories.map((k) => <span className="tg" key={k}>{typeLabel(t, k)}</span>)}</div>}
-      {inq.regions?.length > 0 && <div className="tags">{inq.regions.map((k) => <span className="tg" key={k}>{regionLabel(t, k)}</span>)}</div>}
+      {inq.regions?.length > 0 && <div className="tags">{inq.regions.map((k) => <span className="tg" key={k}>{regionName(lang, k)}</span>)}</div>}
       {inq.detail && <p className="desc">{inq.detail}</p>}
 
       {matches.length > 0 && (
@@ -1344,6 +1405,10 @@ function InquiryCard({ inq, holdings, t, onSend }) {
 
       <div className="btnrow">
         <button className="btn" onClick={() => setOpen((o) => !o)}><span>Per E-Mail antworten</span></button>
+        <button className="btn sec" disabled={saved || alreadyContact}
+          onClick={async () => { try { await onSaveContact(inq); setSaved(true); } catch (e) { setErr("Kontakt: " + e.message); } }}>
+          {saved || alreadyContact ? "✓ Als Kontakt gespeichert" : "Als Kontakt speichern"}
+        </button>
       </div>
 
       {open && (
@@ -1401,15 +1466,16 @@ function HoldingForm({ t, onAdd }) {
   );
 }
 
-function ContactForm({ onAdd }) {
-  const empty = { name: "", email: "", phone: "", kind: "", notes: "" };
+function ContactForm({ t, onAdd }) {
+  const empty = { name: "", email: "", phone: "", kind: "", notes: "", categories: [] };
   const [f, setF] = useState(empty);
   const [busy, setBusy] = useState(false);
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
+  const toggleCat = (k) => setF((p) => ({ ...p, categories: p.categories.includes(k) ? p.categories.filter((x) => x !== k) : [...p.categories, k] }));
   const add = async () => {
     if (!f.name.trim() || busy) return;
     setBusy(true);
-    await onAdd({ name: f.name, email: f.email || null, phone: f.phone || null, kind: f.kind || null, notes: f.notes || null });
+    await onAdd({ name: f.name, email: f.email || null, phone: f.phone || null, kind: f.kind || null, categories: f.categories, notes: f.notes || null });
     setF(empty); setBusy(false);
   };
   return (
@@ -1423,8 +1489,29 @@ function ContactForm({ onAdd }) {
         <div className="field"><label>E-Mail</label><input value={f.email} onChange={set("email")} /></div>
         <div className="field"><label>Telefon</label><input value={f.phone} onChange={set("phone")} /></div>
       </div>
+      <div className="field">
+        <label>Kategorie (Ordner)</label>
+        <div className="chips">
+          {TYPE_KEYS.map((k) => <button key={k} type="button" className={`chip ${f.categories.includes(k) ? "on" : ""}`} onClick={() => toggleCat(k)}>{typeLabel(t, k)}</button>)}
+        </div>
+      </div>
       <div className="field"><label>Notiz</label><textarea value={f.notes} onChange={set("notes")} /></div>
       <button className="btn" disabled={busy} onClick={add}><span>{busy ? "Speichern …" : "Kontakt speichern"}</span></button>
+    </div>
+  );
+}
+
+// Category "folders" — filter inquiries/contacts by asset class.
+function Folders({ items, value, onChange, t }) {
+  const cats = TYPE_KEYS.filter((k) => items.some((i) => (i.categories || []).includes(k)));
+  if (cats.length === 0) return null;
+  const count = (k) => items.filter((i) => (i.categories || []).includes(k)).length;
+  return (
+    <div className="chips" style={{ marginBottom: 20 }}>
+      <button className={`chip ${value === "all" ? "on" : ""}`} onClick={() => onChange("all")}>Alle <span style={{ opacity: .6 }}>{items.length}</span></button>
+      {cats.map((k) => (
+        <button key={k} className={`chip ${value === k ? "on" : ""}`} onClick={() => onChange(k)}>{typeLabel(t, k)} <span style={{ opacity: .6 }}>{count(k)}</span></button>
+      ))}
     </div>
   );
 }
