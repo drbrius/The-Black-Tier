@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useId } from "react";
 import { supabase, hasSupabase } from "./lib/supabase";
+import { LegalPage } from "./Legal";
 
 /*
   THE BLACK TIER — Private Acquisition Office
@@ -21,6 +22,8 @@ const T = {
     heroPlace: "Schweiz",
     mark_offmarket: "Off-Market", mark_confidential: "Vertraulich", mark_personal: "Persönlich",
     nav_how: "So funktioniert es", nav_request: "Suchprofil", nav_disc: "Diskretion",
+    nav_terms: "AGB", nav_privacy: "Datenschutz",
+    consent: "Ich habe die Datenschutzerklärung und AGB gelesen und willige in die Bearbeitung meiner Daten ein.",
     hero1: "Wir suchen,", hero2: "was verborgen bleibt.",
     heroSub: "Ein privates Akquisitionshaus für anspruchsvolle Käufer, die aussergewöhnliche Werte ausserhalb des Marktes erwerben möchten — Liegenschaften und Projekte ebenso wie Yachten, Automobile, seltene Uhren, Edelmetalle, Energie- und Krypto-Werte sowie vertrauliche Sondermandate. Kein Inserat, keine Anmeldung — ein vertrauliches Gesuch, persönlich bearbeitet.",
     heroCta: "Suchprofil eröffnen",
@@ -85,6 +88,8 @@ const T = {
     heroPlace: "Switzerland",
     mark_offmarket: "Off-market", mark_confidential: "Confidential", mark_personal: "In person",
     nav_how: "How it works", nav_request: "Search profile", nav_disc: "Discretion",
+    nav_terms: "Terms", nav_privacy: "Privacy",
+    consent: "I have read the Privacy Policy and Terms and consent to the processing of my data.",
     hero1: "We source", hero2: "what stays hidden.",
     heroSub: "A private acquisition house for discerning buyers acquiring exceptional assets off the market — properties and projects as much as yachts, automobiles, rare watches, precious metals, energy and crypto holdings, and confidential special mandates. No listing, no account — one confidential brief, handled in person.",
     heroCta: "Open a search profile",
@@ -149,6 +154,8 @@ const T = {
     heroPlace: "Suisse",
     mark_offmarket: "Hors marché", mark_confidential: "Confidentiel", mark_personal: "En personne",
     nav_how: "Comment ça marche", nav_request: "Profil de recherche", nav_disc: "Discrétion",
+    nav_terms: "CGV", nav_privacy: "Confidentialité",
+    consent: "J'ai lu la politique de confidentialité et les CGV et je consens au traitement de mes données.",
     hero1: "Nous trouvons", hero2: "ce qui reste caché.",
     heroSub: "Une maison d'acquisition privée pour des acquéreurs exigeants, à la recherche de biens d'exception hors marché — biens immobiliers et projets, mais aussi yachts, automobiles, montres rares, métaux précieux, actifs énergétiques et crypto, ainsi que mandats spéciaux confidentiels. Aucune annonce, aucun compte — une demande confidentielle, traitée en personne.",
     heroCta: "Ouvrir un profil de recherche",
@@ -573,11 +580,32 @@ html{scroll-behavior:smooth;scrollbar-color:var(--line2) var(--paper)}
 .foot .dot{cursor:default;opacity:.45;font-size:16px;transition:opacity .3s var(--ease)}
 .foot .dot:hover{opacity:.9}
 .full{grid-column:1/-1}
+.foot-legal{margin-top:18px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.foot-link{background:none;border:none;color:var(--mute);font-family:var(--sans);font-size:11px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;padding:0;text-decoration:none;transition:color .3s var(--ease)}
+.foot-link:hover{color:var(--gold2)}
+.foot-sep{color:var(--line2)}
+.legal-updated{font-size:12px;color:var(--mute);letter-spacing:.04em;margin-bottom:34px}
+.legal{max-width:820px}
+.legal-sec{margin-bottom:24px}
+.legal-sec h3{font-family:var(--serif);font-size:clamp(19px,2.4vw,24px);font-weight:500;margin-bottom:10px;letter-spacing:-.005em}
+.legal-sec p{color:var(--ink2);font-size:15px;line-height:1.72;margin-bottom:10px}
+.legal-sec ul{margin:8px 0 12px;padding-left:20px}
+.legal-sec li{color:var(--ink2);font-size:15px;line-height:1.7;margin-bottom:7px}
+.field label.consent{display:flex;gap:11px;align-items:flex-start;text-transform:none;letter-spacing:normal;font-size:13px;color:var(--ink2);margin-bottom:0;line-height:1.55;cursor:pointer}
+.field label.consent input{width:16px;height:16px;margin-top:1px;accent-color:var(--gold);flex:none}
+.consent a{color:var(--gold2);text-decoration:underline}
 `;
 
 export default function App() {
   const [lang, setLang] = useState("de");
-  const [page, setPage] = useState(typeof window !== "undefined" && window.location.hash === "#office" ? "office" : "home");
+  const [page, setPage] = useState(() => {
+    if (typeof window === "undefined") return "home";
+    const h = window.location.hash;
+    if (h === "#office") return "office";
+    if (h === "#terms") return "terms";
+    if (h === "#privacy") return "privacy";
+    return "home";
+  });
   const t = T[lang];
 
   const [objects, setObjects] = useState([]);
@@ -613,7 +641,7 @@ export default function App() {
 
       {page === "home" && <Home t={t} go={go} />}
       {page === "disc" && <Discretion t={t} go={go} />}
-      {page === "request" && <Request t={t} lang={lang} onSubmit={(b) => {
+      {page === "request" && <Request t={t} lang={lang} go={go} onSubmit={(b) => {
         setBriefs((p) => [{ ...b, id: "b" + Date.now(), released: [], handed: [] }, ...p]);
         if (hasSupabase) {
           supabase.from("inquiries").insert({
@@ -635,6 +663,9 @@ export default function App() {
             outbox={outbox} setOutbox={setOutbox} />
         ))}
 
+      {page === "terms" && <LegalPage kind="terms" lang={lang} go={go} />}
+      {page === "privacy" && <LegalPage kind="privacy" lang={lang} go={go} />}
+
       {page !== "office" && (
         <footer className="foot">
           <div className="wrap">
@@ -649,6 +680,11 @@ export default function App() {
                 <span>{t.heroPlace}</span>
                 <span className="dot" onClick={() => go("office")} title="office">·</span>
               </div>
+            </div>
+            <div className="foot-legal">
+              <button className="foot-link" onClick={() => go("terms")}>{t.nav_terms}</button>
+              <span className="foot-sep">·</span>
+              <button className="foot-link" onClick={() => go("privacy")}>{t.nav_privacy}</button>
             </div>
           </div>
         </footer>
@@ -719,11 +755,11 @@ function Discretion({ t, go }) {
   );
 }
 
-function Request({ t, lang, onSubmit }) {
+function Request({ t, lang, go, onSubmit }) {
   const empty = {
     name: "", email: "", phone: "", buyerType: "", residence: "", horizon: "", finance: "",
     types: [], regions: [], budgetFrom: "", budgetTo: "", features: [], roomsMin: "", areaMin: "", plotMin: "",
-    detail: "", discretion: "", contactPref: "",
+    detail: "", discretion: "", contactPref: "", consent: false,
   };
   const [f, setF] = useState(empty);
   const [step, setStep] = useState(1);
@@ -748,6 +784,7 @@ function Request({ t, lang, onSubmit }) {
     }
     if (step === 3) {
       if (!f.detail.trim()) e.detail = 1;
+      if (!f.consent) e.consent = 1;
     }
     setErrs(e);
     return Object.keys(e).length === 0;
@@ -903,6 +940,17 @@ function Request({ t, lang, onSubmit }) {
                     {[["email", t.cp_email], ["phone", t.cp_phone]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                   </select>
                 </div>
+              </div>
+              <div className={`field ${errs.consent ? "err" : ""}`} style={{ marginTop: 10 }}>
+                <label className="consent">
+                  <input type="checkbox" checked={f.consent} onChange={(e) => setF((p) => ({ ...p, consent: e.target.checked }))} />
+                  <span>{t.consent}{" "}
+                    <a href="#privacy" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{t.nav_privacy}</a>
+                    {" · "}
+                    <a href="#terms" target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>{t.nav_terms}</a>
+                  </span>
+                </label>
+                {errs.consent && <div className="err-msg">{t.required}</div>}
               </div>
             </>
           )}
